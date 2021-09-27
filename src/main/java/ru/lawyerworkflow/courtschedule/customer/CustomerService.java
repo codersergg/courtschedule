@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Modifying;
@@ -24,36 +25,45 @@ import static ru.lawyerworkflow.courtschedule.customer.CustomerUtil.createCustom
 @AllArgsConstructor
 public class CustomerService {
 
-    CustomerRepository customerRepository;
-
     Sort sortByFirstName = Sort.by("firstName").ascending();
+    CustomerRepository customerRepository;
 
     @Autowired
     public CustomerService(CustomerRepository customerRepository) {
         this.customerRepository = customerRepository;
     }
 
-    public Page<Customer> getAllCustomersByPage(int page) {
+    public Page<CustomerDTO> getAllCustomersByPage(int page) {
         PageRequest pageRequest = PageRequest.of(
                 page,
-                20,
+                3,
                 sortByFirstName);
-        return customerRepository.findAll(pageRequest);
+
+        Page<Customer> pageResponse = Optional.of(customerRepository
+                .findAll(pageRequest))
+                .orElseThrow(() -> new IllegalRequestDataException("No customers found"));
+
+        return new PageImpl<>(pageResponse.stream()
+                .map(customer -> createCustomerDTO((Optional.of(customer))))
+                .toList());
     }
 
     public List<CustomerDTO> getAllCustomers() {
-        List<Customer> customerList = customerRepository.findAll(sortByFirstName);
+        List<Customer> customerList = Optional.of(customerRepository.findAll(sortByFirstName))
+                .orElseThrow(() -> new IllegalRequestDataException("No customers found"));
         return customerList.stream()
                 .map(customer -> createCustomerDTO((Optional.of(customer))))
                 .collect(Collectors.toList());
     }
 
-    public Optional<CustomerDTO> getCustomer(Long id) {
-        boolean isEmpty = customerRepository.findById(id).isEmpty();
-        if (isEmpty) {
-            throw new IllegalRequestDataException("Customer with id: " + id + " not found");
-        }
-        return Optional.of(createCustomerDTO(customerRepository.findById(id)));
+    public CustomerDTO getCustomer(Long id) {
+        return createCustomerDTO(
+                Optional.of(
+                        customerRepository
+                                .findById(id)
+                                .orElseThrow(() -> new IllegalRequestDataException("Customer with id: " + id + " not found"))
+                )
+        );
     }
 
     @Transactional
@@ -73,8 +83,10 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    public Optional<Customer> findByEmailIgnoreCase(String email) {
-        return customerRepository.findByEmailIgnoreCase(email);
+    public void findByEmailIgnoreCase(String email) {
+        customerRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalRequestDataException("Customer with email: " + email + " already exists"));
     }
 
     @Transactional

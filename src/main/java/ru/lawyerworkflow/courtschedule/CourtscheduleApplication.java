@@ -37,7 +37,6 @@ public class CourtscheduleApplication {
                     admin
             );
             casesRepository.save(cases1);
-            generatorRandomAppuser(casesRepository);
 
             Customer admin2 = new Customer(
                     "secondCustomerFirstName",
@@ -51,12 +50,13 @@ public class CourtscheduleApplication {
                     admin2
             );
             casesRepository.saveAll(List.of(cases1, cases2));
+
             generatorRandomAppuser(casesRepository);
         };
     }
 
     private void generatorRandomAppuser(CasesRepository casesRepository) {
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 10; i++) {
             Faker faker = new Faker();
             String firstName = faker.name().firstName();
             String lastName = faker.name().lastName();

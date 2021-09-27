@@ -15,7 +15,6 @@ import ru.lawyerworkflow.courtschedule.util.ValidationUtil;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static ru.lawyerworkflow.courtschedule.util.ValidationUtil.checkNew;
@@ -34,8 +33,8 @@ public class CustomerController {
         return customerService.getAllCustomers();
     }
 
-    @GetMapping(path = "/page{pageNumber}")
-    public Page<Customer> getAllCustomersByPage(
+    @GetMapping(path = "/page/{pageNumber}")
+    public Page<CustomerDTO> getAllCustomersByPage(
             @PathVariable("pageNumber") int page) {
         log.info("GetCustomersByPage {} ", page);
         return customerService.getAllCustomersByPage(page);
@@ -43,7 +42,7 @@ public class CustomerController {
 
     @GetMapping(
             path = "{customerId}")
-    public Optional<CustomerDTO> getCustomer(
+    public CustomerDTO getCustomer(
             @PathVariable("customerId") Long id) {
         log.info("Get customerDTO by id {} ", id);
         return customerService.getCustomer(id);
@@ -67,8 +66,8 @@ public class CustomerController {
     }
 
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateCustomer(
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
+    public Customer updateCustomer(
             @Valid @RequestBody Customer customer,
             @AuthenticationPrincipal AuthUser authUser) {
         log.info("updateCustomer {} to {}", authUser, customer);
@@ -79,7 +78,7 @@ public class CustomerController {
         if (customer.getPassword() == null) {
             customer.setPassword(oldCustomer.getPassword());
         }
-        customerService.updateCustomer(customer);
+        return customerService.updateCustomer(customer);
     }
 
     @DeleteMapping
